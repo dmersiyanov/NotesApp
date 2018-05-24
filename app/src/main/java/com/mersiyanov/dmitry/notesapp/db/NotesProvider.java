@@ -119,4 +119,5 @@ public class NotesProvider extends ContentProvider {
                       @Nullable String selection, @Nullable String[] selectionArgs) {
         return 0;
     }
+
 }
