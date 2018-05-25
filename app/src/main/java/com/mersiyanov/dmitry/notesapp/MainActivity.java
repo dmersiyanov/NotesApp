@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        notesAdapter = new NotesAdapter(null);
+        notesAdapter = new NotesAdapter(null, onNoteClickListener);
         recyclerView.setAdapter(notesAdapter);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         });
 
     }
+
+
 
 
     @Override
@@ -71,4 +73,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void onLoaderReset(Loader<Cursor> loader) {
 
     }
+
+    private final NotesAdapter.OnNoteClickListener onNoteClickListener = new NotesAdapter.OnNoteClickListener() {
+        @Override
+        public void onNoteClick(long noteId) {
+            Intent intent = new Intent(MainActivity.this, NoteActivity.class);
+            intent.putExtra(NoteActivity.EXTRA_NOTE_ID, noteId);
+
+            startActivity(intent);
+        }
+    };
 }

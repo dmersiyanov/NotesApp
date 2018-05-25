@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 
 public class CreateNoteActivity extends AppCompatActivity {
@@ -74,14 +75,14 @@ public class CreateNoteActivity extends AppCompatActivity {
         if (isCorrect) {
             long currentTime = System.currentTimeMillis();
 
-            ContentValues contentValues = new ContentValues();
+            final ContentValues contentValues = new ContentValues();
 
             contentValues.put(NotesContract.Notes.COLUMN_TITLE, title);
             contentValues.put(NotesContract.Notes.COLUMN_NOTE, text);
             contentValues.put(NotesContract.Notes.COLUMN_CREATED_TS, currentTime);
             contentValues.put(NotesContract.Notes.COLUMN_UPDATED_TS, currentTime);
 
-            getContentResolver().insert(NotesContract.Notes.URI, contentValues);
+            new InsertDataAsyncTask(getContentResolver()).execute(contentValues);
 
             finish();
         }

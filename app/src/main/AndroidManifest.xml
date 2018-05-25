@@ -22,7 +22,8 @@
             android:authorities="com.skillberg.notes.provider"
             android:exported="false" />
 
-        <activity android:name=".CreateNoteActivity"></activity>
+        <activity android:name=".CreateNoteActivity" />
+        <activity android:name=".NoteActivity"></activity>
     </application>
 
 </manifest>
