@@ -5,4 +5,13 @@
     <string name="title_save">Сохранить</string>
     <string name="error_empty_field">Обязательное поле</string>
     <string name="title_edit">Редактировать</string>
+    <string name="title_attach">Прикрепить</string>
+    <string name="title_dialog_attachment_variants">Прикрепить изображение</string>
+
+    <string-array name="attachment_variants">
+        <item>Выбрать из галереи</item>
+        <item>Сделать снимок</item>
+    </string-array>
+
+
 </resources>

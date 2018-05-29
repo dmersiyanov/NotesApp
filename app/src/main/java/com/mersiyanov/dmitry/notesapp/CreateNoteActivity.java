@@ -1,12 +1,17 @@
 package com.mersiyanov.dmitry.notesapp;
 
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -20,6 +25,9 @@ import android.view.MenuItem;
 import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
 public class CreateNoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
     private TextInputEditText titleEt;
@@ -29,6 +37,7 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
     private TextInputLayout textTil;
 
     public static final String EXTRA_NOTE_ID = "note_id";
+    private static final int REQUEST_CODE_PICK_FROM_GALLERY = 1;
     private long noteId;
 
 
@@ -83,9 +92,34 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
                 finish();
                 return true;
 
+            case R.id.action_attach:
+                showImageSelectionDialog();
+
+                return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void showImageSelectionDialog() {
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.title_dialog_attachment_variants)
+                .setItems(R.array.attachment_variants, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case 0:
+                                pickImageFromGallery();
+                            case 1:
+                                takePhoto();
+                        }
+
+                    }
+                }).create();
+
+        if(!isFinishing()) alertDialog.show();
+
     }
 
     private void saveNote() {
@@ -138,13 +172,40 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
     }
 
-    private void editNote() {
-        Intent intent = new Intent(this, CreateNoteActivity.class);
-        intent.putExtra(CreateNoteActivity.EXTRA_NOTE_ID, noteId);
-
-        startActivity(intent);
+    private void pickImageFromGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, REQUEST_CODE_PICK_FROM_GALLERY);
     }
 
+
+    private void takePhoto() {
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK
+                && data != null) {
+
+
+            Uri imageUri = data.getData();
+            if(imageUri != null) {
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(imageUri);
+                    final Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                    Log.i("Test", "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {

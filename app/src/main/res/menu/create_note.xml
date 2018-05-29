@@ -2,10 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+
+    <item
+        android:id="@+id/action_attach"
+        android:icon="@drawable/ic_attachment_24dp"
+        android:title="@string/title_attach"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/action_save"
         android:icon="@drawable/ic_done_24dp"
         android:title="@string/title_save"
         app:showAsAction="ifRoom" />
+
+
 
 </menu>
