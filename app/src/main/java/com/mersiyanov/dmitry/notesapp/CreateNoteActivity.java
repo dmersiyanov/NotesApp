@@ -13,6 +13,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -25,8 +26,12 @@ import android.view.MenuItem;
 import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
+
+import io.reactivex.annotations.Nullable;
 
 public class CreateNoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
@@ -181,6 +186,21 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
     private void takePhoto() {
 
+    }
+
+    @Nullable
+    private File createImageFile() {
+        String fileName = System.currentTimeMillis() + ".jpg";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        File image = new File(storageDir, fileName);
+        try {
+            if(image.createNewFile()) return image;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
