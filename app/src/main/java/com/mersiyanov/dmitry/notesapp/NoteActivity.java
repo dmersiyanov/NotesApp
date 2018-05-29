@@ -3,30 +3,37 @@ package com.mersiyanov.dmitry.notesapp;
 import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 
-public class NoteActivity extends AppCompatActivity implements  LoaderManager.LoaderCallbacks<Cursor> {
+public class NoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    public static final String EXTRA_NOTE_ID = "note_id";
 
     private TextView noteTv;
-    public static final String EXTRA_NOTE_ID = "note_id";
+
     private long noteId;
 
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_note);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         noteTv = findViewById(R.id.text_tv);
@@ -41,7 +48,33 @@ public class NoteActivity extends AppCompatActivity implements  LoaderManager.Lo
                 null, // Аргументы
                 this // Callback для событий загрузчика
         );
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+
+        getMenuInflater().inflate(R.menu.edit_note, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+
+                return true;
+
+            case R.id.action_edit:
+                editNote();
+
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override
@@ -57,10 +90,12 @@ public class NoteActivity extends AppCompatActivity implements  LoaderManager.Lo
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        data.setNotificationUri(getContentResolver(), NotesContract.Notes.URI);
-        displayNote(data);
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.i("Test", "Load finished: " + cursor.getCount());
 
+        cursor.setNotificationUri(getContentResolver(), NotesContract.Notes.URI);
+
+        displayNote(cursor);
     }
 
     @Override
@@ -68,21 +103,24 @@ public class NoteActivity extends AppCompatActivity implements  LoaderManager.Lo
 
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
+    /**
+     * Редактирование заметки
+     */
+    private void editNote() {
+        Intent intent = new Intent(this, CreateNoteActivity.class);
+        intent.putExtra(CreateNoteActivity.EXTRA_NOTE_ID, noteId);
 
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+        startActivity(intent);
     }
 
+
+    /**
+     * Отображаем данные из курсора
+     */
     private void displayNote(Cursor cursor) {
         if (!cursor.moveToFirst()) {
             // Если не получилось перейти к первой строке — завершаем Activity
+
             finish();
         }
 
@@ -92,5 +130,5 @@ public class NoteActivity extends AppCompatActivity implements  LoaderManager.Lo
         setTitle(title);
         noteTv.setText(noteText);
     }
-
 }
+

@@ -4,4 +4,5 @@
     <string name="hint_text">Текст заметки</string>
     <string name="title_save">Сохранить</string>
     <string name="error_empty_field">Обязательное поле</string>
+    <string name="title_edit">Редактировать</string>
 </resources>
