@@ -14,8 +14,10 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -43,7 +45,10 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
     public static final String EXTRA_NOTE_ID = "note_id";
     private static final int REQUEST_CODE_PICK_FROM_GALLERY = 1;
+    private static final int REQUEST_CODE_TAKE_PHOTO = 2;
     private long noteId;
+    private File currentImageFile;
+
 
 
 
@@ -185,6 +190,17 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
 
     private void takePhoto() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        currentImageFile = createImageFile();
+
+        if(currentImageFile != null) {
+            Uri imageUri = FileProvider.getUriForFile(this,
+                    "com.mersiyanov.dmitry.notesapp.fileprovider",
+                    currentImageFile);
+
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+        }
 
     }
 
@@ -210,7 +226,6 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
         if(requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK
                 && data != null) {
 
-
             Uri imageUri = data.getData();
             if(imageUri != null) {
                 try {
@@ -223,6 +238,11 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
                     e.printStackTrace();
                 }
             }
+
+        } else if(requestCode == REQUEST_CODE_TAKE_PHOTO && resultCode == RESULT_OK) {
+            Bitmap bitmap = BitmapFactory.decodeFile(currentImageFile.getAbsolutePath());
+            Log.i("Test", "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+
         }
 
     }
