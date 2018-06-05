@@ -14,11 +14,13 @@ public final class NotesContract {
     public static final String[] CREATE_DATABASE_QUERIES = {
             Notes.CREATE_TABLE,
             Notes.CREATE_UPDATED_TS_INDEX,
+
             Images.CREATE_TABLE
     };
 
     private NotesContract() {
     }
+
 
     /**
      * Описание таблицы с заметками
@@ -83,6 +85,9 @@ public final class NotesContract {
 
     }
 
+    /**
+     * Описание таблицы с изображениями
+     */
     public static abstract class Images implements BaseColumns {
 
         public static final String TABLE_NAME = "images";
@@ -110,9 +115,11 @@ public final class NotesContract {
                 COLUMN_PATH,
                 COLUMN_NOTE_ID
         };
+
         /**
          * Типы данных
          */
+
         public static final String URI_TYPE_IMAGE_DIR = "vnd.android.cursor.dir/vnd.skillberg.image";
         public static final String URI_TYPE_IMAGE_ITEM = "vnd.android.cursor.item/vnd.skillberg.image";
     }

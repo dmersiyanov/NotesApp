@@ -1,16 +1,11 @@
 package com.mersiyanov.dmitry.notesapp;
 
 import android.app.AlertDialog;
-import android.app.LoaderManager;
 import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.Loader;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -18,24 +13,30 @@ import android.provider.MediaStore;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.FileProvider;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
+import com.mersiyanov.dmitry.notesapp.ui.NoteImagesAdapter;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import io.reactivex.annotations.Nullable;
 
-public class CreateNoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
+
+public class CreateNoteActivity extends BaseNoteActivity {
+
+    public static final String EXTRA_NOTE_ID = "note_id";
+
+    private static final int REQUEST_CODE_PICK_FROM_GALLERY = 1;
+    private static final int REQUEST_CODE_TAKE_PHOTO = 2;
 
     private TextInputEditText titleEt;
     private TextInputEditText textEt;
@@ -43,24 +44,19 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
     private TextInputLayout titleTil;
     private TextInputLayout textTil;
 
-    public static final String EXTRA_NOTE_ID = "note_id";
-    private static final int REQUEST_CODE_PICK_FROM_GALLERY = 1;
-    private static final int REQUEST_CODE_TAKE_PHOTO = 2;
-    private long noteId;
     private File currentImageFile;
 
 
-
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_create_note);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         titleEt = findViewById(R.id.title_et);
         textEt = findViewById(R.id.text_et);
@@ -68,18 +64,37 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
         titleTil = findViewById(R.id.title_til);
         textTil = findViewById(R.id.text_til);
 
+        RecyclerView recyclerView = findViewById(R.id.images_rv);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+
+        noteImagesAdapter = new NoteImagesAdapter(null, onNoteImageLongClickListener);
+        recyclerView.setAdapter(noteImagesAdapter);
+
         noteId = getIntent().getLongExtra(EXTRA_NOTE_ID, -1);
 
         if (noteId != -1) {
-            getLoaderManager().initLoader(
-                    0, // Идентификатор загрузчика
-                    null, // Аргументы
-                    this // Callback для событий загрузчика
-            );
+            initNoteLoader();
+
+            initImagesLoader();
+        }
+    }
+
+    /**
+     * Отображаем данные из курсора
+     */
+    @Override
+    protected void displayNote(Cursor cursor) {
+        if (!cursor.moveToFirst()) {
+            // Если не получилось перейти к первой строке — завершаем Activity
+
+            finish();
         }
 
+        String title = cursor.getString(cursor.getColumnIndexOrThrow(NotesContract.Notes.COLUMN_TITLE));
+        String noteText = cursor.getString(cursor.getColumnIndexOrThrow(NotesContract.Notes.COLUMN_NOTE));
 
-
+        titleEt.setText(title);
+        textEt.setText(noteText);
     }
 
     @Override
@@ -94,12 +109,14 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_save:
-                saveNote();
-                return true;
-
             case android.R.id.home:
                 finish();
+
+                return true;
+
+            case R.id.action_save:
+                saveNote();
+
                 return true;
 
             case R.id.action_attach:
@@ -112,26 +129,48 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
         }
     }
 
-    private void showImageSelectionDialog() {
-        AlertDialog alertDialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.title_dialog_attachment_variants)
-                .setItems(R.array.attachment_variants, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switch (which) {
-                            case 0:
-                                pickImageFromGallery();
-                            case 1:
-                                takePhoto();
-                        }
 
-                    }
-                }).create();
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        if(!isFinishing()) alertDialog.show();
+        if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY
+                && resultCode == RESULT_OK
+                && data != null) {
 
+            // Получаем URI изображения
+            Uri imageUri = data.getData();
+
+            if (imageUri != null) {
+                try {
+                    // Получаем InputStream, из которого будем декодировать Bitmap
+                    InputStream inputStream = getContentResolver().openInputStream(imageUri);
+
+                    // Копируем изображение в наш файл
+                    File imageFile = createImageFile();
+
+                    writeInputStreamToFile(inputStream, imageFile);
+
+                    addImageToDatabase(imageFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        } else if (requestCode == REQUEST_CODE_TAKE_PHOTO
+                && resultCode == RESULT_OK) {
+
+            // Сохраняем изображение
+            addImageToDatabase(currentImageFile);
+
+            // На всякий случай обнуляем файл
+            currentImageFile = null;
+        }
     }
 
+    /**
+     * Метод для сохранения заметок
+     */
     private void saveNote() {
         String title = titleEt.getText().toString().trim();
         String text = textEt.getText().toString().trim();
@@ -158,6 +197,7 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
         if (isCorrect) {
             long currentTime = System.currentTimeMillis();
+
             ContentValues contentValues = new ContentValues();
             contentValues.put(NotesContract.Notes.COLUMN_TITLE, title);
             contentValues.put(NotesContract.Notes.COLUMN_NOTE, text);
@@ -169,7 +209,7 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
             contentValues.put(NotesContract.Notes.COLUMN_UPDATED_TS, currentTime);
 
             if (noteId == -1) {
-                new InsertDataAsyncTask(getContentResolver()).execute(contentValues);
+                getContentResolver().insert(NotesContract.Notes.URI, contentValues);
             } else {
                 getContentResolver().update(ContentUris.withAppendedId(NotesContract.Notes.URI, noteId),
                         contentValues,
@@ -179,39 +219,51 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
 
             finish();
         }
-
-    }
-
-    private void pickImageFromGallery() {
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setType("image/*");
-        startActivityForResult(intent, REQUEST_CODE_PICK_FROM_GALLERY);
     }
 
 
-    private void takePhoto() {
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        currentImageFile = createImageFile();
+    /**
+     * Показываем диалог выбора изображения
+     */
+    private void showImageSelectionDialog() {
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.title_dialog_attachment_variants)
+                .setItems(R.array.attachment_variants, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (which == 0) {
+                            pickImageFromGallery();
+                        } else if (which == 1) {
+                            takePhoto();
+                        }
+                    }
+                })
+                .create();
 
-        if(currentImageFile != null) {
-            Uri imageUri = FileProvider.getUriForFile(this,
-                    "com.mersiyanov.dmitry.notesapp.fileprovider",
-                    currentImageFile);
-
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-            startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+        if (!isFinishing()) {
+            alertDialog.show();
         }
-
     }
 
+    /**
+     * Создаём файл для хранения изображения
+     */
     @Nullable
     private File createImageFile() {
-        String fileName = System.currentTimeMillis() + ".jpg";
+        // Генерируем имя файла
+        String filename = System.currentTimeMillis() + ".jpg";
+
+        // Получаем приватную директорию на карте памяти для хранения изображений
+        // Выглядит она примерно так: /sdcard/Android/data/com.skillberg.notes/files/Pictures
+        // Директория будет создана автоматически, если ещё не существует
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
-        File image = new File(storageDir, fileName);
+        // Создаём файл
+        File image = new File(storageDir, filename);
         try {
-            if(image.createNewFile()) return image;
+            if (image.createNewFile()) {
+                return image;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -219,72 +271,104 @@ public class CreateNoteActivity extends AppCompatActivity implements LoaderManag
         return null;
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    /**
+     * Запускаем выбор изображения из галереи
+     */
+    private void pickImageFromGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
 
-        if(requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK
-                && data != null) {
+        startActivityForResult(intent, REQUEST_CODE_PICK_FROM_GALLERY);
+    }
 
-            Uri imageUri = data.getData();
-            if(imageUri != null) {
-                try {
-                    InputStream inputStream = getContentResolver().openInputStream(imageUri);
-                    final Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                    Log.i("Test", "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
+    /**
+     * Получаем фотографию с камеры
+     */
+    private void takePhoto() {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
+        // Создаём файл для изображения
+        currentImageFile = createImageFile();
 
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+        if (currentImageFile != null) {
+            // Если файл создался — получаем его URI
+            Uri imageUri = FileProvider.getUriForFile(this,
+                    "com.skillberg.notes.fileprovider",
+                    currentImageFile);
+
+            // Передаём URI в камеру
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+
+            startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+        }
+    }
+
+    /**
+     * Пишем из InputStream в файл
+     */
+    private void writeInputStreamToFile(InputStream inputStream, File outFile) throws IOException {
+        FileOutputStream fileOutputStream = new FileOutputStream(outFile);
+
+        byte[] buffer = new byte[8192];
+        int n;
+
+        while ((n = inputStream.read(buffer)) > 0) {
+            fileOutputStream.write(buffer, 0, n);
+        }
+
+        fileOutputStream.flush();
+        fileOutputStream.close();
+
+        inputStream.close();
+    }
+
+    /**
+     * Добавляем изображение в БД
+     */
+    private void addImageToDatabase(File file) {
+        if (noteId == -1) {
+            // На данный момент мы добавляем аттачи только в режиме редактирования
+            return;
+        }
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
+        contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
+
+        getContentResolver().insert(NotesContract.Images.URI, contentValues);
+    }
+
+    /**
+     * Удаляем изображение
+     */
+    private void deleteImage(long imageId) {
+        getContentResolver().delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId),
+                null,
+                null);
+    }
+
+    /**
+     * Listener для лонгтапов по изображению
+     */
+    private final NoteImagesAdapter.OnNoteImageLongClickListener onNoteImageLongClickListener =
+            new NoteImagesAdapter.OnNoteImageLongClickListener() {
+                @Override
+                public void onImageLongClick(final long imageId) {
+                    AlertDialog alertDialog = new AlertDialog.Builder(CreateNoteActivity.this)
+                            .setMessage(R.string.message_delete_image)
+                            .setPositiveButton(R.string.title_btn_yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    deleteImage(imageId);
+                                }
+                            })
+                            .setNegativeButton(R.string.title_btn_no, null)
+                            .create();
+
+                    if (!isFinishing()) {
+                        alertDialog.show();
+                    }
                 }
-            }
-
-        } else if(requestCode == REQUEST_CODE_TAKE_PHOTO && resultCode == RESULT_OK) {
-            Bitmap bitmap = BitmapFactory.decodeFile(currentImageFile.getAbsolutePath());
-            Log.i("Test", "Bitmap size: " + bitmap.getWidth() + "x" + bitmap.getHeight());
-
-        }
-
-    }
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(
-                this,  // Контекст
-                ContentUris.withAppendedId(NotesContract.Notes.URI, noteId), // URI
-                NotesContract.Notes.SINGLE_PROJECTION, // Столбцы
-                null, // Параметры выборки
-                null, // Аргументы выборки
-                null // Сортировка по умолчанию
-        );
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        Log.i("Test", "Load finished: " + cursor.getCount());
-
-        cursor.setNotificationUri(getContentResolver(), NotesContract.Notes.URI);
-
-        displayNote(cursor);
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-
-    }
-
-    private void displayNote(Cursor cursor) {
-        if (!cursor.moveToFirst()) {
-            // Если не получилось перейти к первой строке — завершаем Activity
-
-            finish();
-        }
-
-        String title = cursor.getString(cursor.getColumnIndexOrThrow(NotesContract.Notes.COLUMN_TITLE));
-        String noteText = cursor.getString(cursor.getColumnIndexOrThrow(NotesContract.Notes.COLUMN_NOTE));
-
-        titleEt.setText(title);
-        textEt.setText(noteText);
-    }
+            };
 
 }
