@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 
 public class InsertDataAsyncTask extends AsyncTask<ContentValues, Void, Void> {
 
-    private final ContentResolver contentResolver;
+    private ContentResolver contentResolver;
 
     public InsertDataAsyncTask(ContentResolver contentResolver) {
         this.contentResolver = contentResolver;
@@ -19,4 +19,9 @@ public class InsertDataAsyncTask extends AsyncTask<ContentValues, Void, Void> {
 
     }
 
+    @Override
+    protected void onPostExecute(Void aVoid) {
+        super.onPostExecute(aVoid);
+        contentResolver = null;
+    }
 }

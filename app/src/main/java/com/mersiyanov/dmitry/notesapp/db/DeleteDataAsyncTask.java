@@ -6,7 +6,7 @@ import android.os.AsyncTask;
 
 public class DeleteDataAsyncTask extends AsyncTask<Long, Void, Void> {
 
-    private final ContentResolver contentResolver;
+    private ContentResolver contentResolver;
 
     public DeleteDataAsyncTask(ContentResolver contentResolver) {
         this.contentResolver = contentResolver;
@@ -17,5 +17,11 @@ public class DeleteDataAsyncTask extends AsyncTask<Long, Void, Void> {
     protected Void doInBackground(Long... imageId) {
         contentResolver.delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId[0]), null, null);
         return null;
+    }
+
+    @Override
+    protected void onPostExecute(Void aVoid) {
+        super.onPostExecute(aVoid);
+        contentResolver = null;
     }
 }
