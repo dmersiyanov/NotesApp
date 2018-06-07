@@ -20,6 +20,8 @@ import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.mersiyanov.dmitry.notesapp.db.DeleteDataAsyncTask;
+import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 import com.mersiyanov.dmitry.notesapp.ui.NoteImagesAdapter;
 
@@ -132,11 +134,9 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+//        super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY
-                && resultCode == RESULT_OK
-                && data != null) {
+        if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK) {
 
             // Получаем URI изображения
             Uri imageUri = data.getData();
@@ -157,13 +157,10 @@ public class CreateNoteActivity extends BaseNoteActivity {
                 }
 
             }
-        } else if (requestCode == REQUEST_CODE_TAKE_PHOTO
-                && resultCode == RESULT_OK) {
+        } else if (requestCode == REQUEST_CODE_TAKE_PHOTO && resultCode == RESULT_OK) {
 
             // Сохраняем изображение
             addImageToDatabase(currentImageFile);
-
-            // На всякий случай обнуляем файл
             currentImageFile = null;
         }
     }
@@ -250,15 +247,11 @@ public class CreateNoteActivity extends BaseNoteActivity {
      */
     @Nullable
     private File createImageFile() {
-        // Генерируем имя файла
         String filename = System.currentTimeMillis() + ".jpg";
 
         // Получаем приватную директорию на карте памяти для хранения изображений
-        // Выглядит она примерно так: /sdcard/Android/data/com.skillberg.notes/files/Pictures
-        // Директория будет создана автоматически, если ещё не существует
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
-        // Создаём файл
         File image = new File(storageDir, filename);
         try {
             if (image.createNewFile()) {
@@ -293,13 +286,17 @@ public class CreateNoteActivity extends BaseNoteActivity {
         if (currentImageFile != null) {
             // Если файл создался — получаем его URI
             Uri imageUri = FileProvider.getUriForFile(this,
-                    "com.skillberg.notes.fileprovider",
+                    "com.mersiyanov.dmitry.notesapp.fileprovider",
                     currentImageFile);
 
             // Передаём URI в камеру
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 
-            startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+            }
+
+
         }
     }
 
@@ -335,16 +332,19 @@ public class CreateNoteActivity extends BaseNoteActivity {
         contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
         contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
 
-        getContentResolver().insert(NotesContract.Images.URI, contentValues);
+        new InsertDataAsyncTask(getContentResolver()).execute(contentValues);
+
+//        getContentResolver().insert(NotesContract.Images.URI, contentValues);
     }
 
     /**
      * Удаляем изображение
      */
     private void deleteImage(long imageId) {
-        getContentResolver().delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId),
-                null,
-                null);
+        new DeleteDataAsyncTask(getContentResolver()).execute(imageId);
+//        getContentResolver().delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId),
+//                null,
+//                null);
     }
 
     /**

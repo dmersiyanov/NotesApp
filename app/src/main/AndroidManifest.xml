@@ -23,11 +23,11 @@
 
         <provider
             android:name=".db.NotesProvider"
-            android:authorities="com.skillberg.notes.provider"
+            android:authorities="com.mersiyanov.dmitry.notesapp.provider"
             android:exported="false" />
 
         <activity android:name=".CreateNoteActivity" />
-        <activity android:name=".NoteActivity"></activity>
+        <activity android:name=".NoteActivity" />
         
         
         <provider
