@@ -70,9 +70,7 @@ public class NoteActivity extends BaseNoteActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-
         getMenuInflater().inflate(R.menu.view_note, menu);
-
         return true;
     }
 

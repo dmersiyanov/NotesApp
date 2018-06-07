@@ -1,7 +1,6 @@
 package com.mersiyanov.dmitry.notesapp;
 
 import android.app.AlertDialog;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,6 +22,7 @@ import android.view.MenuItem;
 import com.mersiyanov.dmitry.notesapp.db.DeleteDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
+import com.mersiyanov.dmitry.notesapp.db.UpdateDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.ui.NoteImagesAdapter;
 
 import java.io.File;
@@ -75,6 +75,8 @@ public class CreateNoteActivity extends BaseNoteActivity {
         noteImagesAdapter = new NoteImagesAdapter(null, onNoteImageLongClickListener);
         recyclerView.setAdapter(noteImagesAdapter);
 
+        imagesList = new ArrayList<>();
+
         noteId = getIntent().getLongExtra(EXTRA_NOTE_ID, -1);
 
         if (noteId != -1) {
@@ -90,7 +92,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
     protected void displayNote(Cursor cursor) {
         if (!cursor.moveToFirst()) {
             // Если не получилось перейти к первой строке — завершаем Activity
-
             finish();
         }
 
@@ -131,13 +132,10 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-
-        imagesList = new ArrayList<>();
+        super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
 
-            // Получаем URI изображения
             Uri imageUri = data.getData();
 
             if (imageUri != null) {
@@ -147,10 +145,7 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
                     writeInputStreamToFile(inputStream, imageFile);
 
-//                    addImageToDatabase(imageFile);
-
                     imagesList.add(imageFile);
-
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -159,7 +154,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
             }
         } else if (requestCode == REQUEST_CODE_TAKE_PHOTO && resultCode == RESULT_OK) {
 
-//            addImageToDatabase(currentImageFile);
             imagesList.add(currentImageFile);
             currentImageFile = null;
         }
@@ -176,7 +170,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
         if (TextUtils.isEmpty(title)) {
             isCorrect = false;
-
             titleTil.setError(getString(R.string.error_empty_field));
             titleTil.setErrorEnabled(true);
         } else {
@@ -185,7 +178,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
         if (TextUtils.isEmpty(text)) {
             isCorrect = false;
-
             textTil.setError(getString(R.string.error_empty_field));
             textTil.setErrorEnabled(true);
         } else {
@@ -206,12 +198,10 @@ public class CreateNoteActivity extends BaseNoteActivity {
             contentValues.put(NotesContract.Notes.COLUMN_UPDATED_TS, currentTime);
 
             if (noteId == -1) {
-                getContentResolver().insert(NotesContract.Notes.URI, contentValues);
+                new InsertDataAsyncTask(getContentResolver(), NotesContract.Notes.URI).execute(contentValues);
             } else {
-                getContentResolver().update(ContentUris.withAppendedId(NotesContract.Notes.URI, noteId),
-                        contentValues,
-                        null,
-                        null);
+                new UpdateDataAsyncTask(getContentResolver(), NotesContract.Notes.URI, noteId).execute(contentValues);
+
             }
 
             addImagesToDatabase(imagesList);
@@ -220,10 +210,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
         }
     }
 
-
-    /**
-     * Показываем диалог выбора изображения
-     */
     private void showImageSelectionDialog() {
         AlertDialog alertDialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.title_dialog_attachment_variants)
@@ -244,9 +230,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
         }
     }
 
-    /**
-     * Создаём файл для хранения изображения
-     */
     @Nullable
     private File createImageFile() {
         String filename = System.currentTimeMillis() + ".jpg";
@@ -266,9 +249,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
         return null;
     }
 
-    /**
-     * Запускаем выбор изображения из галереи
-     */
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
@@ -276,13 +256,9 @@ public class CreateNoteActivity extends BaseNoteActivity {
         startActivityForResult(intent, REQUEST_CODE_PICK_FROM_GALLERY);
     }
 
-    /**
-     * Получаем фотографию с камеры
-     */
     private void takePhoto() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        // Создаём файл для изображения
         currentImageFile = createImageFile();
 
         if (currentImageFile != null) {
@@ -322,53 +298,29 @@ public class CreateNoteActivity extends BaseNoteActivity {
     }
 
     /**
-     * Добавляем изображение в БД
+     * Добавляем изображения в БД
      */
-    private void addImageToDatabase(File file) {
-        if (noteId == -1) {
-            // На данный момент мы добавляем аттачи только в режиме редактирования
-            return;
-        }
-
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
-        contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
-
-        new InsertDataAsyncTask(getContentResolver()).execute(contentValues);
-
-//        getContentResolver().insert(NotesContract.Images.URI, contentValues);
-    }
-
     private void addImagesToDatabase(List<File> images) {
-        if (noteId == -1) {
-            // На данный момент мы добавляем аттачи только в режиме редактирования
-            return;
-        }
+//        if (noteId == -1) {
+//            // На данный момент мы добавляем аттачи только в режиме редактирования
+//            return;
+//        }
 
         for (File file: images) {
             ContentValues contentValues = new ContentValues();
             contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
             contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
-
             new InsertDataAsyncTask(getContentResolver(), NotesContract.Images.URI).execute(contentValues);
         }
 
-
-
-
-
-//        getContentResolver().insert(NotesContract.Images.URI, contentValues);
     }
 
     /**
      * Удаляем изображение
      */
     private void deleteImage(long imageId) {
-        DeleteDataAsyncTask deleteDataAsyncTask = new DeleteDataAsyncTask(getContentResolver(), NotesContract.Images.URI);
-        deleteDataAsyncTask.execute(imageId);
-//        getContentResolver().delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId),
-//                null,
-//                null);
+        new DeleteDataAsyncTask(getContentResolver(), NotesContract.Images.URI).execute(imageId);
+
     }
 
     /**

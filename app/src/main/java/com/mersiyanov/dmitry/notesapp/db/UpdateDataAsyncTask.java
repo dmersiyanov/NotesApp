@@ -1,29 +1,29 @@
 package com.mersiyanov.dmitry.notesapp.db;
 
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
 
-public class InsertDataAsyncTask extends AsyncTask<ContentValues, Void, Void> {
+public class UpdateDataAsyncTask extends AsyncTask<ContentValues, Void, Void> {
 
     private ContentResolver contentResolver;
     private Uri uri;
+    private long noteId;
 
-    public InsertDataAsyncTask(ContentResolver contentResolver, Uri uri) {
+    public UpdateDataAsyncTask(ContentResolver contentResolver, Uri uri, long noteId) {
         this.contentResolver = contentResolver;
         this.uri = uri;
+        this.noteId = noteId;
     }
 
     @Override
     protected Void doInBackground(ContentValues... contentValues) {
-
-        // TO-DO получить id заметки в активити
-        Uri id = contentResolver.insert(uri, contentValues[0]);
-        Log.e(this.getClass().toString(), id.getLastPathSegment());
-
-        System.out.println(id.toString());
+        contentResolver.insert(uri, contentValues[0]);
+        contentResolver.update(ContentUris.withAppendedId(NotesContract.Notes.URI, noteId),
+                contentValues[0],
+                null, null);
         return null;
 
     }
