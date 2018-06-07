@@ -136,7 +136,7 @@ public class CreateNoteActivity extends BaseNoteActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 //        super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK) {
+        if (requestCode == REQUEST_CODE_PICK_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
 
             // Получаем URI изображения
             Uri imageUri = data.getData();
@@ -332,7 +332,9 @@ public class CreateNoteActivity extends BaseNoteActivity {
         contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
         contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
 
-        new InsertDataAsyncTask(getContentResolver()).execute(contentValues);
+        InsertDataAsyncTask insertDataAsyncTask = new InsertDataAsyncTask(getContentResolver(), NotesContract.Images.URI);
+        insertDataAsyncTask.execute(contentValues);
+
 
 //        getContentResolver().insert(NotesContract.Images.URI, contentValues);
     }
@@ -341,7 +343,8 @@ public class CreateNoteActivity extends BaseNoteActivity {
      * Удаляем изображение
      */
     private void deleteImage(long imageId) {
-        new DeleteDataAsyncTask(getContentResolver()).execute(imageId);
+        DeleteDataAsyncTask deleteDataAsyncTask = new DeleteDataAsyncTask(getContentResolver(), NotesContract.Images.URI);
+        deleteDataAsyncTask.execute(imageId);
 //        getContentResolver().delete(ContentUris.withAppendedId(NotesContract.Images.URI, imageId),
 //                null,
 //                null);

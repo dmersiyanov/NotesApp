@@ -44,6 +44,8 @@ public class NoteImagesAdapter extends CursorRecyclerAdapter<NoteImagesAdapter.V
 
         viewHolder.imageView.setImageBitmap(bitmap);
         viewHolder.itemView.setTag(imageId);
+
+//        bitmap.recycle();
     }
 
     /**

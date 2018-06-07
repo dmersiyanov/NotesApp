@@ -2,19 +2,22 @@ package com.mersiyanov.dmitry.notesapp.db;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.net.Uri;
 import android.os.AsyncTask;
 
 public class InsertDataAsyncTask extends AsyncTask<ContentValues, Void, Void> {
 
     private final ContentResolver contentResolver;
+    private Uri uri;
 
-    public InsertDataAsyncTask(ContentResolver contentResolver) {
+    public InsertDataAsyncTask(ContentResolver contentResolver, Uri uri) {
         this.contentResolver = contentResolver;
+        this.uri = uri;
     }
 
     @Override
     protected Void doInBackground(ContentValues... contentValues) {
-        contentResolver.insert(NotesContract.Notes.URI, contentValues[0]);
+        contentResolver.insert(uri, contentValues[0]);
         return null;
 
     }
