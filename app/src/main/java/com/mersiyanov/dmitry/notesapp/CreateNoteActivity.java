@@ -18,6 +18,8 @@ import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
 import com.mersiyanov.dmitry.notesapp.db.DeleteDataAsyncTask;
 import com.mersiyanov.dmitry.notesapp.db.InsertDataAsyncTask;
@@ -44,9 +46,10 @@ public class CreateNoteActivity extends BaseNoteActivity {
 
     private TextInputEditText titleEt;
     private TextInputEditText textEt;
-
     private TextInputLayout titleTil;
     private TextInputLayout textTil;
+
+    private TextView fileToBeLoaded;
 
     private File currentImageFile;
     private List<File> imagesList;
@@ -82,11 +85,17 @@ public class CreateNoteActivity extends BaseNoteActivity {
         if (noteId != -1) {
             initNoteLoader();
             initImagesLoader();
+        } else {
+            fileToBeLoaded = findViewById(R.id.files_to_be_loaded);
+            fileToBeLoaded.setVisibility(View.VISIBLE);
+            String text = getResources().getString(R.string.title_file_to_be_loaded, imagesList.size());
+            fileToBeLoaded.setText(text);
+
         }
     }
 
     /**
-     * Отображаем данные из курсора
+     * Show data from Cursor
      */
     @Override
     protected void displayNote(Cursor cursor) {
@@ -146,6 +155,8 @@ public class CreateNoteActivity extends BaseNoteActivity {
                     writeInputStreamToFile(inputStream, imageFile);
 
                     imagesList.add(imageFile);
+                    String text = getResources().getString(R.string.title_file_to_be_loaded, imagesList.size());
+                    fileToBeLoaded.setText(text);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -155,13 +166,12 @@ public class CreateNoteActivity extends BaseNoteActivity {
         } else if (requestCode == REQUEST_CODE_TAKE_PHOTO && resultCode == RESULT_OK) {
 
             imagesList.add(currentImageFile);
+            String text = getResources().getString(R.string.title_file_to_be_loaded, imagesList.size());
+            fileToBeLoaded.setText(text);
             currentImageFile = null;
         }
     }
 
-    /**
-     * Метод для сохранения заметок
-     */
     private void saveNote() {
         String title = titleEt.getText().toString().trim();
         String text = textEt.getText().toString().trim();
@@ -198,15 +208,12 @@ public class CreateNoteActivity extends BaseNoteActivity {
             contentValues.put(NotesContract.Notes.COLUMN_UPDATED_TS, currentTime);
 
             if (noteId == -1) {
-                new InsertDataAsyncTask(getContentResolver(), NotesContract.Notes.URI).execute(contentValues);
+                new InsertDataAsyncTask(getContentResolver(), NotesContract.Notes.URI, onSuccessListener).execute(contentValues);
             } else {
                 new UpdateDataAsyncTask(getContentResolver(), NotesContract.Notes.URI, noteId).execute(contentValues);
 
             }
 
-            addImagesToDatabase(imagesList);
-
-            finish();
         }
     }
 
@@ -252,7 +259,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setType("image/*");
-
         startActivityForResult(intent, REQUEST_CODE_PICK_FROM_GALLERY);
     }
 
@@ -266,8 +272,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
             Uri imageUri = FileProvider.getUriForFile(this,
                     "com.mersiyanov.dmitry.notesapp.fileprovider",
                     currentImageFile);
-
-            // Передаём URI в камеру
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 
 //            if (intent.resolveActivity(getPackageManager()) != null) {
@@ -278,9 +282,6 @@ public class CreateNoteActivity extends BaseNoteActivity {
         }
     }
 
-    /**
-     * Пишем из InputStream в файл
-     */
     private void writeInputStreamToFile(InputStream inputStream, File outFile) throws IOException {
         FileOutputStream fileOutputStream = new FileOutputStream(outFile);
 
@@ -297,35 +298,29 @@ public class CreateNoteActivity extends BaseNoteActivity {
         inputStream.close();
     }
 
-    /**
-     * Добавляем изображения в БД
-     */
     private void addImagesToDatabase(List<File> images) {
-//        if (noteId == -1) {
-//            // На данный момент мы добавляем аттачи только в режиме редактирования
-//            return;
-//        }
-
         for (File file: images) {
             ContentValues contentValues = new ContentValues();
             contentValues.put(NotesContract.Images.COLUMN_PATH, file.getAbsolutePath());
             contentValues.put(NotesContract.Images.COLUMN_NOTE_ID, noteId);
-            new InsertDataAsyncTask(getContentResolver(), NotesContract.Images.URI).execute(contentValues);
+            new InsertDataAsyncTask(getContentResolver(), NotesContract.Images.URI, null).execute(contentValues);
         }
-
     }
 
-    /**
-     * Удаляем изображение
-     */
     private void deleteImage(long imageId) {
         new DeleteDataAsyncTask(getContentResolver(), NotesContract.Images.URI).execute(imageId);
-
     }
 
-    /**
-     * Listener для лонгтапов по изображению
-     */
+    private final InsertDataAsyncTask.onSuccessListener onSuccessListener = new InsertDataAsyncTask.onSuccessListener() {
+        @Override
+        public void onSuccess(long noteID) {
+            noteId = noteID;
+            addImagesToDatabase(imagesList);
+            finish();
+
+        }
+    };
+
     private final NoteImagesAdapter.OnNoteImageLongClickListener onNoteImageLongClickListener =
             new NoteImagesAdapter.OnNoteImageLongClickListener() {
                 @Override
@@ -346,5 +341,4 @@ public class CreateNoteActivity extends BaseNoteActivity {
                     }
                 }
             };
-
 }

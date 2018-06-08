@@ -20,9 +20,6 @@ public abstract class BaseNoteActivity extends AppCompatActivity implements Load
 
     protected NoteImagesAdapter noteImagesAdapter;
 
-    /**
-     * Инициализируем загрузчик заметки
-     */
     protected void initNoteLoader() {
         getLoaderManager().initLoader(
                 LOADER_NOTE, // Идентификатор загрузчика
@@ -31,9 +28,6 @@ public abstract class BaseNoteActivity extends AppCompatActivity implements Load
         );
     }
 
-    /**
-     * Инициализируем загрузчик изображений
-     */
     protected void initImagesLoader() {
         getLoaderManager().initLoader(
                 LOADER_IMAGES,
@@ -65,16 +59,13 @@ public abstract class BaseNoteActivity extends AppCompatActivity implements Load
         }
     }
 
-
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if (loader.getId() == LOADER_NOTE) {
             cursor.setNotificationUri(getContentResolver(), NotesContract.Notes.URI);
-
             displayNote(cursor);
         } else {
             cursor.setNotificationUri(getContentResolver(), NotesContract.Images.URI);
-
             noteImagesAdapter.swapCursor(cursor);
         }
     }

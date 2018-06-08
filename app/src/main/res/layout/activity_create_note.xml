@@ -43,6 +43,7 @@
 
             <android.support.design.widget.TextInputLayout
                 android:id="@+id/text_til"
+                android:paddingBottom="10dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp">
@@ -60,9 +61,18 @@
 
             </android.support.design.widget.TextInputLayout>
 
+            <TextView
+                android:id="@+id/files_to_be_loaded"
+                android:visibility="gone"
+                android:text="@string/title_file_to_be_loaded"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/images_rv"
+                tools:itemCount="3"
+                tools:listitem="@layout/view_item_note_image"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp" />
