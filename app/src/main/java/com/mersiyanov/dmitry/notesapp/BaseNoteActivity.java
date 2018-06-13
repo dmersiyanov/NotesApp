@@ -21,19 +21,11 @@ public abstract class BaseNoteActivity extends AppCompatActivity implements Load
     protected NoteImagesAdapter noteImagesAdapter;
 
     protected void initNoteLoader() {
-        getLoaderManager().initLoader(
-                LOADER_NOTE, // Идентификатор загрузчика
-                null, // Аргументы
-                this // Callback для событий загрузчика
-        );
+        getLoaderManager().initLoader(LOADER_NOTE, null, this);
     }
 
     protected void initImagesLoader() {
-        getLoaderManager().initLoader(
-                LOADER_IMAGES,
-                null,
-                this
-        );
+        getLoaderManager().initLoader(LOADER_IMAGES, null, this);
     }
 
     @Override
