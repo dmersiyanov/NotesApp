@@ -14,7 +14,7 @@
     </android.support.design.widget.AppBarLayout>
 
 
-    <ScrollView
+    <android.support.v4.widget.NestedScrollView
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:paddingEnd="16dp"
@@ -61,10 +61,16 @@
 
             </android.support.design.widget.TextInputLayout>
 
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/images_rv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" />
+
 
         </LinearLayout>
 
-    </ScrollView>
+    </android.support.v4.widget.NestedScrollView>
 
 
 

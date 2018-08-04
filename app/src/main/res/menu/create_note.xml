@@ -8,4 +8,11 @@
         android:title="@string/title_save"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/action_attach"
+        android:icon="@drawable/ic_attachment_24dp"
+        android:title="@string/title_attach"
+        app:showAsAction="ifRoom" />
+
+
 </menu>

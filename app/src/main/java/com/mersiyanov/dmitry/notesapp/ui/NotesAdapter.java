@@ -58,9 +58,6 @@ public class NotesAdapter extends CursorRecyclerAdapter<NotesAdapter.ViewHolder>
 
     }
 
-    /**
-     * View holder
-     */
     class ViewHolder extends RecyclerView.ViewHolder {
         final SimpleDateFormat SDF = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
