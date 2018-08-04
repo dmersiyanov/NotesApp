@@ -81,5 +81,5 @@ public class NoteImagesAdapter extends CursorRecyclerAdapter<NoteImagesAdapter.V
         void onImageLongClick(long imageId);
     }
 
-
 }
+

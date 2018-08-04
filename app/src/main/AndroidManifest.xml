@@ -8,9 +8,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/app_icon"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/app_icon"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
         <activity android:name=".MainActivity">
@@ -23,7 +23,7 @@
 
         <provider
             android:name=".db.NotesProvider"
-            android:authorities="com.skillberg.notes.provider"
+            android:authorities="com.mersiyanov.dmitry.notesapp.provider"
             android:exported="false" />
 
         <provider
@@ -39,7 +39,20 @@
         </provider>
 
         <activity android:name=".CreateNoteActivity" />
-        <activity android:name=".NoteActivity"></activity>
+        <activity android:name=".NoteActivity" />
+        
+        
+        <provider
+            android:authorities="com.mersiyanov.dmitry.notesapp.fileprovider"
+            android:name="android.support.v4.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"
+                />
+
+        </provider>
     </application>
 
 </manifest>

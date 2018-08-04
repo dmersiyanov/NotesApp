@@ -8,17 +8,19 @@ public final class NotesContract {
     public static final String DB_NAME = "notes.db";
     public static final int DB_VERSION = 2;
 
-    public static final String AUTHORITY = "com.skillberg.notes.provider";
+    public static final String AUTHORITY = "com.mersiyanov.dmitry.notesapp.provider";
     public static final String URI = "content://" + AUTHORITY;
 
     public static final String[] CREATE_DATABASE_QUERIES = {
             Notes.CREATE_TABLE,
             Notes.CREATE_UPDATED_TS_INDEX,
+
             Images.CREATE_TABLE
     };
 
     private NotesContract() {
     }
+
 
     /**
      * Описание таблицы с заметками
@@ -76,13 +78,16 @@ public final class NotesContract {
          */
 
         // Список заметок
-        public static final String URI_TYPE_NOTE_DIR = "vnd.android.cursor.dir/vnd.skillberg.note";
+        public static final String URI_TYPE_NOTE_DIR = "vnd.android.cursor.dir/vnd.dmersiyanov.note";
 
         // Одна заметка
-        public static final String URI_TYPE_NOTE_ITEM = "vnd.android.cursor.item/vnd.skillberg.note";
+        public static final String URI_TYPE_NOTE_ITEM = "vnd.android.cursor.item/vnd.dmersiyanov.note";
 
     }
 
+    /**
+     * Описание таблицы с изображениями
+     */
     public static abstract class Images implements BaseColumns {
 
         public static final String TABLE_NAME = "images";
@@ -110,11 +115,13 @@ public final class NotesContract {
                 COLUMN_PATH,
                 COLUMN_NOTE_ID
         };
+
         /**
          * Типы данных
          */
-        public static final String URI_TYPE_IMAGE_DIR = "vnd.android.cursor.dir/vnd.skillberg.image";
-        public static final String URI_TYPE_IMAGE_ITEM = "vnd.android.cursor.item/vnd.skillberg.image";
+
+        public static final String URI_TYPE_IMAGE_DIR = "vnd.android.cursor.dir/vnd.dmersiyanov.image";
+        public static final String URI_TYPE_IMAGE_ITEM = "vnd.android.cursor.item/vnd.dmersiyanov.image";
     }
 
 }

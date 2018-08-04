@@ -11,13 +11,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
-
 public class NotesProvider extends ContentProvider {
 
     private static final UriMatcher URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 
     private static final int NOTES = 1;
     private static final int NOTE = 2;
+
     private static final int IMAGES = 3;
     private static final int IMAGE = 4;
 
@@ -60,6 +60,23 @@ public class NotesProvider extends ContentProvider {
                         sortOrder);
 
             case NOTE:
+                String id = uri.getLastPathSegment();
+
+                if (TextUtils.isEmpty(selection)) {
+                    selection = NotesContract.Notes._ID + " = ?";
+                    selectionArgs = new String[]{id};
+                } else {
+                    selection = selection + " AND " + NotesContract.Notes._ID + " = ?";
+
+                    String[] newSelectionArgs = new String[selectionArgs.length + 1];
+
+                    System.arraycopy(selectionArgs, 0, newSelectionArgs, 0, selectionArgs.length);
+
+                    newSelectionArgs[newSelectionArgs.length - 1] = id;
+
+                    selectionArgs = newSelectionArgs;
+                }
+
                 return db.query(NotesContract.Notes.TABLE_NAME,
                         projection,
                         selection,
@@ -129,13 +146,18 @@ public class NotesProvider extends ContentProvider {
                 return null;
 
             case IMAGES:
-                long  imageRowId = db.insert(NotesContract.Images.TABLE_NAME, null, contentValues);
-                if(imageRowId > 0) {
-                    Uri iamgeUri = ContentUris.withAppendedId(NotesContract.Images.URI, imageRowId);
+                long imageRowId = db.insert(NotesContract.Images.TABLE_NAME,
+                        null,
+                        contentValues);
+
+                if (imageRowId > 0) {
+                    Uri imageUri = ContentUris.withAppendedId(NotesContract.Images.URI, imageRowId);
                     getContext().getContentResolver().notifyChange(uri, null);
-                    return iamgeUri;
+
+                    return imageUri;
                 }
-                return  null;
+
+                return null;
 
             default:
                 return null;
@@ -146,18 +168,19 @@ public class NotesProvider extends ContentProvider {
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
 
         SQLiteDatabase db = notesDbHelper.getWritableDatabase();
+
         switch (URI_MATCHER.match(uri)) {
             case NOTE:
                 String noteId = uri.getLastPathSegment();
 
                 if (TextUtils.isEmpty(selection)) {
                     selection = NotesContract.Notes._ID + " = ?";
-                    selectionArgs = new String[] {noteId};
+                    selectionArgs = new String[]{noteId};
                 } else {
                     selection = selection + " AND " + NotesContract.Notes._ID + " = ?";
                     String[] newSelectionArgs = new String[selectionArgs.length + 1];
                     System.arraycopy(selectionArgs, 0, newSelectionArgs, 0, selectionArgs.length);
-                    newSelectionArgs[selectionArgs.length - 1] = noteId;
+                    newSelectionArgs[newSelectionArgs.length - 1] = noteId;
                     selectionArgs = newSelectionArgs;
                 }
 
@@ -188,19 +211,16 @@ public class NotesProvider extends ContentProvider {
                 return imageRowsUpdated;
         }
 
-
-
-
         return 0;
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues,
                       @Nullable String selection, @Nullable String[] selectionArgs) {
+
         SQLiteDatabase db = notesDbHelper.getWritableDatabase();
 
         switch (URI_MATCHER.match(uri)) {
-
             case NOTE:
                 String id = uri.getLastPathSegment();
 
@@ -209,9 +229,13 @@ public class NotesProvider extends ContentProvider {
                     selectionArgs = new String[]{id};
                 } else {
                     selection = selection + " AND " + NotesContract.Notes._ID + " = ?";
+
                     String[] newSelectionArgs = new String[selectionArgs.length + 1];
+
                     System.arraycopy(selectionArgs, 0, newSelectionArgs, 0, selectionArgs.length);
+
                     newSelectionArgs[newSelectionArgs.length - 1] = id;
+
                     selectionArgs = newSelectionArgs;
                 }
 
@@ -220,10 +244,9 @@ public class NotesProvider extends ContentProvider {
                 getContext().getContentResolver().notifyChange(uri, null);
 
                 return rowsUpdated;
-
         }
+
 
         return 0;
     }
-
 }

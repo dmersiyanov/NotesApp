@@ -6,15 +6,16 @@ import android.support.v7.widget.RecyclerView;
 
 import com.mersiyanov.dmitry.notesapp.db.NotesContract;
 
-public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<ViewHolder>
-{
+public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.ViewHolder>
+        extends RecyclerView.Adapter<ViewHolder> {
 
-    protected Cursor cursor;
-    protected boolean isDataValid;
-    private int idColumnIndex;
+    protected Cursor cursor; // Курсор
+    protected boolean isDataValid; // Валидны ли данные
+    protected int idColumnIndex; // Индекс столбца ID в курсоре
 
-    public CursorRecyclerAdapter(Cursor cursor){
+    public CursorRecyclerAdapter(Cursor cursor) {
         super();
+
         this.cursor = cursor;
 
         // Данные корректны если курсор не null
@@ -27,12 +28,7 @@ public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.View
 
         // Каждый элемент имеет уникальный ID
         setHasStableIds(true);
-
-
     }
-
-    public abstract void onBindViewHolder(ViewHolder viewHolder, Cursor cursor);
-
 
     @Override
     public void onBindViewHolder(ViewHolder viewHolder, int position) {
@@ -50,6 +46,8 @@ public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.View
         onBindViewHolder(viewHolder, cursor);
     }
 
+    public abstract void onBindViewHolder(ViewHolder viewHolder, Cursor cursor);
+
     @Override
     public int getItemCount() {
         if (isDataValid && cursor != null) {
@@ -61,6 +59,7 @@ public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.View
 
     @Override
     public long getItemId(int position) {
+
         // Если с данными всё хорошо и есть курсор
         if (isDataValid && cursor != null) {
 
@@ -76,6 +75,12 @@ public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.View
         return RecyclerView.NO_ID;
     }
 
+    /**
+     * Заменяет старый курсор новым
+     *
+     * @param newCursor Новый курсор
+     * @return Старый курсор или null
+     */
     @Nullable
     public Cursor swapCursor(Cursor newCursor) {
         // Если курсор не изменился — ничего не заменяем
@@ -89,15 +94,18 @@ public abstract class CursorRecyclerAdapter<ViewHolder extends RecyclerView.View
         if (newCursor != null) {
             idColumnIndex = newCursor.getColumnIndexOrThrow(NotesContract.Notes._ID);
             isDataValid = true;
+
             notifyDataSetChanged();
         } else {
             idColumnIndex = -1;
             isDataValid = false;
+
             // Сообщаем, что данных в адаптере больше нет
             notifyItemRangeRemoved(0, getItemCount());
         }
-        return oldCursor;
 
+        return oldCursor;
     }
+
 
 }

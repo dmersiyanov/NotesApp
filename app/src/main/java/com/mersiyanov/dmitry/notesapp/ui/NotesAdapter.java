@@ -20,6 +20,7 @@ public class NotesAdapter extends CursorRecyclerAdapter<NotesAdapter.ViewHolder>
 
     public NotesAdapter(Cursor cursor, OnNoteClickListener onNoteClickListener) {
         super(cursor);
+
         this.onNoteClickListener = onNoteClickListener;
     }
 
@@ -40,25 +41,19 @@ public class NotesAdapter extends CursorRecyclerAdapter<NotesAdapter.ViewHolder>
         Date date = new Date(updatedTs);
 
         viewHolder.dateTv.setText(viewHolder.SDF.format(date));
-
-
-    }
-
-    public interface OnNoteClickListener {
-        void onNoteClick(long noteId);
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
+
         View view = layoutInflater.inflate(R.layout.view_item_note, parent, false);
 
         return new ViewHolder(view);
-
-
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
+
         final SimpleDateFormat SDF = new SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault());
 
         private final TextView titleTv;
@@ -74,9 +69,17 @@ public class NotesAdapter extends CursorRecyclerAdapter<NotesAdapter.ViewHolder>
                 @Override
                 public void onClick(View v) {
                     long noteId = (Long) v.getTag();
+
                     onNoteClickListener.onNoteClick(noteId);
                 }
             });
         }
+    }
+
+    /**
+     * Слушатель для обработки кликов
+     */
+    public interface OnNoteClickListener {
+        void onNoteClick(long noteId);
     }
 }
